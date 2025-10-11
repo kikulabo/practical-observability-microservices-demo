@@ -68,6 +68,12 @@ mk_kubernetes_manifests() {
     for dir in ./src/*/
     do
         svcname="$(basename "${dir}")"
+
+        # Skip shippingservice to preserve custom image name
+        if [[ "$svcname" == "shippingservice" ]]; then
+            continue
+        fi
+
         image="$REPO_PREFIX/$svcname:$TAG"
 
         pattern="^(\s*)image:\s.*$svcname(.*)(\s*)"
@@ -109,6 +115,11 @@ mk_kustomize_base() {
     # Inside redis.yaml, we use the official `redis:alpine` Docker image.
     # We don't use an image from `us-central1-docker.pkg.dev/google-samples/microservices-demo`.
     if [[ $service_name == "redis" ]]; then
+      continue
+    fi
+
+    # Skip shippingservice to preserve custom image name
+    if [[ $service_name == "shippingservice" ]]; then
       continue
     fi
 
