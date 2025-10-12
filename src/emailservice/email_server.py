@@ -35,6 +35,7 @@ from opentelemetry.instrumentation.grpc import GrpcInstrumentorServer
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
+from opentelemetry.sdk.resources import Resource
 
 import googlecloudprofiler
 
@@ -176,23 +177,41 @@ if __name__ == '__main__':
 
   # Tracing
   try:
-    if os.environ["ENABLE_TRACING"] == "1":
+    if os.environ.get("ENABLE_TRACING") == "1":
+      logger.info("Tracing enabled.")
+
+      # Get service name and endpoint
+      service_name = os.getenv("OTEL_SERVICE_NAME", "emailservice")
       otel_endpoint = os.getenv("COLLECTOR_SERVICE_ADDR", "localhost:4317")
-      trace.set_tracer_provider(TracerProvider())
-      trace.get_tracer_provider().add_span_processor(
-        BatchSpanProcessor(
-            OTLPSpanExporter(
-            endpoint = otel_endpoint,
-            insecure = True
-          )
-        )
+
+      # Create resource with service name
+      resource = Resource.create({
+        "service.name": service_name,
+      })
+
+      # Set up tracer provider with resource
+      tracer_provider = TracerProvider(resource=resource)
+      trace.set_tracer_provider(tracer_provider)
+
+      # Add OTLP exporter
+      otlp_exporter = OTLPSpanExporter(
+        endpoint=otel_endpoint,
+        insecure=True
       )
-    grpc_server_instrumentor = GrpcInstrumentorServer()
-    grpc_server_instrumentor.instrument()
+      span_processor = BatchSpanProcessor(otlp_exporter)
+      trace.get_tracer_provider().add_span_processor(span_processor)
+
+      # Instrument gRPC server
+      grpc_server_instrumentor = GrpcInstrumentorServer()
+      grpc_server_instrumentor.instrument()
+
+      logger.info(f"OpenTelemetry configured with service_name={service_name}, endpoint={otel_endpoint}")
+    else:
+      logger.info("Tracing disabled (ENABLE_TRACING not set to 1).")
 
   except (KeyError, DefaultCredentialsError):
       logger.info("Tracing disabled.")
   except Exception as e:
-      logger.warn(f"Exception on Cloud Trace setup: {traceback.format_exc()}, tracing disabled.") 
+      logger.warn(f"Exception on OpenTelemetry setup: {traceback.format_exc()}, tracing disabled.") 
   
   start(dummy_mode = True)

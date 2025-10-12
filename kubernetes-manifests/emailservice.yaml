@@ -43,7 +43,7 @@ spec:
               - ALL
           privileged: false
           readOnlyRootFilesystem: true
-        image: emailservice
+        image: kikulabo/techbookfest19-microservices-demo-emailservice:v2
         ports:
         - containerPort: 8080
         env:
@@ -51,6 +51,12 @@ spec:
           value: "8080"
         - name: DISABLE_PROFILER
           value: "1"
+        - name: ENABLE_TRACING
+          value: "1"
+        - name: COLLECTOR_SERVICE_ADDR
+          value: "otel-collector:4317"
+        - name: OTEL_SERVICE_NAME
+          value: microservices-demo-email
         readinessProbe:
           periodSeconds: 5
           grpc:
