@@ -27,7 +27,7 @@ spec:
       labels:
         app: emailservice
     spec:
-      serviceAccountName: kikulabo/techbookfest19-microservices-demo-emailservice:v1
+      serviceAccountName: emailservice
       terminationGracePeriodSeconds: 5
       securityContext:
         fsGroup: 1000
@@ -43,7 +43,7 @@ spec:
               - ALL
           privileged: false
           readOnlyRootFilesystem: true
-        image: emailservice
+        image: kikulabo/techbookfest19-microservices-demo-emailservice:v1
         ports:
         - containerPort: 8080
         env:
