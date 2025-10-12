@@ -55,7 +55,7 @@ spec:
         - name: COLLECTOR_SERVICE_ADDR
           value: "otel-collector:4317"
         - name: OTEL_SERVICE_NAME
-          value: microservices-demo-shippingservice
+          value: microservices-demo-shipping
         readinessProbe:
           periodSeconds: 5
           grpc:
