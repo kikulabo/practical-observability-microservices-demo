@@ -27,7 +27,7 @@ spec:
       labels:
         app: emailservice
     spec:
-      serviceAccountName: emailservice
+      serviceAccountName: kikulabo/techbookfest19-microservices-demo-emailservice:v1
       terminationGracePeriodSeconds: 5
       securityContext:
         fsGroup: 1000
@@ -51,6 +51,12 @@ spec:
           value: "8080"
         - name: DISABLE_PROFILER
           value: "1"
+        - name: ENABLE_TRACING
+          value: "1"
+        - name: COLLECTOR_SERVICE_ADDR
+          value: "otel-collector:4317"
+        - name: OTEL_SERVICE_NAME
+          value: microservices-demo-email
         readinessProbe:
           periodSeconds: 5
           grpc:

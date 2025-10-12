@@ -74,6 +74,12 @@ mk_kubernetes_manifests() {
             continue
         fi
 
+        # Skip emailservice to preserve custom image name
+        if [[ "$svcname" == "emailservice" ]]; then
+            continue
+        fi
+
+
         image="$REPO_PREFIX/$svcname:$TAG"
 
         pattern="^(\s*)image:\s.*$svcname(.*)(\s*)"
