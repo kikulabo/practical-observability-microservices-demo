@@ -71,7 +71,7 @@ spec:
           - name: COLLECTOR_SERVICE_ADDR
             value: "otel-collector:4317"
           - name: OTEL_SERVICE_NAME
-            value: microservices-demo-checkoutservice
+            value: microservices-demo-checkout
           resources:
             requests:
               cpu: 100m
