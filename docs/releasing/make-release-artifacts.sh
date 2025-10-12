@@ -79,6 +79,10 @@ mk_kubernetes_manifests() {
             continue
         fi
 
+        # Skip recommendationservice to preserve custom image name
+        if [[ "$svcname" == "recommendationservice" ]]; then
+            continue
+        fi
 
         image="$REPO_PREFIX/$svcname:$TAG"
 
@@ -113,10 +117,9 @@ mk_kustomize_base() {
       continue
     fi
 
-    cp ${file_to_copy} ./kustomize/base/
-
     service_name="$(basename "${file_to_copy}" .yaml)"
-    image="$REPO_PREFIX/$service_name:$TAG"
+
+    cp ${file_to_copy} ./kustomize/base/
 
     # Inside redis.yaml, we use the official `redis:alpine` Docker image.
     # We don't use an image from `us-central1-docker.pkg.dev/google-samples/microservices-demo`.
@@ -129,6 +132,17 @@ mk_kustomize_base() {
       continue
     fi
 
+    # Skip emailservice to preserve custom image name
+    if [[ $service_name == "emailservice" ]]; then
+      continue
+    fi
+
+    # Skip recommendationservice to preserve custom image name
+    if [[ $service_name == "recommendationservice" ]]; then
+      continue
+    fi
+
+    image="$REPO_PREFIX/$service_name:$TAG"
     pattern="^(\s*)image:\s.*${service_name}(.*)(\s*)"
     replace="\1image: ${image}\3"
     gsed --in-place --regexp-extended "s|${pattern}|${replace}|g" ./kustomize/base/${service_name}.yaml

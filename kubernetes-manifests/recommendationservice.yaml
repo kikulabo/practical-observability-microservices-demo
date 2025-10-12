@@ -43,7 +43,7 @@ spec:
               - ALL
           privileged: false
           readOnlyRootFilesystem: true
-        image: recommendationservice
+        image: kikulabo/techbookfest19-microservices-demo-recommendationservice:v1
         ports:
         - containerPort: 8080
         readinessProbe:
@@ -61,6 +61,12 @@ spec:
           value: "productcatalogservice:3550"
         - name: DISABLE_PROFILER
           value: "1"
+        - name: ENABLE_TRACING
+          value: "1"
+        - name: COLLECTOR_SERVICE_ADDR
+          value: "otel-collector:4317"
+        - name: OTEL_SERVICE_NAME
+          value: microservices-demo-recommendation
         resources:
           requests:
             cpu: 100m
