@@ -28,6 +28,18 @@ import io.grpc.StatusRuntimeException;
 import io.grpc.health.v1.HealthCheckResponse.ServingStatus;
 import io.grpc.services.*;
 import io.grpc.stub.StreamObserver;
+import io.opentelemetry.api.OpenTelemetry;
+import io.opentelemetry.api.common.AttributeKey;
+import io.opentelemetry.api.common.Attributes;
+import io.opentelemetry.api.trace.Tracer;
+import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator;
+import io.opentelemetry.context.propagation.ContextPropagators;
+import io.opentelemetry.exporter.otlp.trace.OtlpGrpcSpanExporter;
+import io.opentelemetry.instrumentation.grpc.v1_6.GrpcTelemetry;
+import io.opentelemetry.sdk.OpenTelemetrySdk;
+import io.opentelemetry.sdk.resources.Resource;
+import io.opentelemetry.sdk.trace.SdkTracerProvider;
+import io.opentelemetry.sdk.trace.export.BatchSpanProcessor;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -47,6 +59,8 @@ public final class AdService {
 
   private Server server;
   private HealthStatusManager healthMgr;
+  private static OpenTelemetry openTelemetry;
+  private static GrpcTelemetry grpcTelemetry;
 
   private static final AdService service = new AdService();
 
@@ -54,12 +68,16 @@ public final class AdService {
     int port = Integer.parseInt(System.getenv().getOrDefault("PORT", "9555"));
     healthMgr = new HealthStatusManager();
 
-    server =
-        ServerBuilder.forPort(port)
+    ServerBuilder<?> serverBuilder = ServerBuilder.forPort(port)
             .addService(new AdServiceImpl())
-            .addService(healthMgr.getHealthService())
-            .build()
-            .start();
+            .addService(healthMgr.getHealthService());
+
+    // Add gRPC tracing interceptor if tracing is enabled
+    if (grpcTelemetry != null) {
+      serverBuilder.intercept(grpcTelemetry.newServerInterceptor());
+    }
+
+    server = serverBuilder.build().start();
     logger.info("Ad Service started, listening on " + port);
     Runtime.getRuntime()
         .addShutdownHook(
@@ -207,27 +225,56 @@ public final class AdService {
   }
 
   private static void initTracing() {
-    if (System.getenv("DISABLE_TRACING") != null) {
-      logger.info("Tracing disabled.");
+    String enableTracing = System.getenv("ENABLE_TRACING");
+    if (enableTracing == null || !enableTracing.equals("1")) {
+      logger.info("Tracing disabled (ENABLE_TRACING not set to 1).");
       return;
     }
-    logger.info("Tracing enabled but temporarily unavailable");
-    logger.info("See https://github.com/GoogleCloudPlatform/microservices-demo/issues/422 for more info.");
 
-    // TODO(arbrown) Implement OpenTelemetry tracing
-    
-    logger.info("Tracing enabled - Stackdriver exporter initialized.");
+    try {
+      logger.info("Tracing enabled.");
+
+      // Get service name and endpoint from environment variables
+      String serviceName = System.getenv().getOrDefault("OTEL_SERVICE_NAME", "adservice");
+      String otelEndpoint = System.getenv().getOrDefault("COLLECTOR_SERVICE_ADDR", "localhost:4317");
+
+      // Create resource with service name
+      Resource serviceNameResource = Resource.create(
+          Attributes.of(AttributeKey.stringKey("service.name"), serviceName)
+      );
+
+      // Set up OTLP exporter
+      OtlpGrpcSpanExporter spanExporter = OtlpGrpcSpanExporter.builder()
+          .setEndpoint("http://" + otelEndpoint)
+          .build();
+
+      // Set up tracer provider with the exporter
+      SdkTracerProvider sdkTracerProvider = SdkTracerProvider.builder()
+          .addSpanProcessor(BatchSpanProcessor.builder(spanExporter).build())
+          .setResource(Resource.getDefault().merge(serviceNameResource))
+          .build();
+
+      // Set up OpenTelemetry SDK
+      openTelemetry = OpenTelemetrySdk.builder()
+          .setTracerProvider(sdkTracerProvider)
+          .setPropagators(ContextPropagators.create(W3CTraceContextPropagator.getInstance()))
+          .buildAndRegisterGlobal();
+
+      // Set up gRPC instrumentation
+      grpcTelemetry = GrpcTelemetry.create(openTelemetry);
+
+      logger.info("OpenTelemetry configured with service_name=" + serviceName + ", endpoint=" + otelEndpoint);
+    } catch (Exception e) {
+      logger.warn("Exception on OpenTelemetry setup: " + e.getMessage() + ", tracing disabled.");
+    }
   }
 
   /** Main launches the server from the command line. */
   public static void main(String[] args) throws IOException, InterruptedException {
 
-    new Thread(
-            () -> {
-              initStats();
-              initTracing();
-            })
-        .start();
+    // Initialize stats and tracing before starting the server
+    initStats();
+    initTracing();
 
     // Start the RPC server. You shouldn't see any output from gRPC before this.
     logger.info("AdService starting.");

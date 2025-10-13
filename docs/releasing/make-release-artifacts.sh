@@ -84,6 +84,11 @@ mk_kubernetes_manifests() {
             continue
         fi
 
+        # Skip adservice to preserve custom image name
+        if [[ "$svcname" == "adservice" ]]; then
+            continue
+        fi
+
         image="$REPO_PREFIX/$svcname:$TAG"
 
         pattern="^(\s*)image:\s.*$svcname(.*)(\s*)"

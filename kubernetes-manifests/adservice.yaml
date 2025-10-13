@@ -43,12 +43,18 @@ spec:
               - ALL
           privileged: false
           readOnlyRootFilesystem: true
-        image: adservice
+        image: kikulabo/techbookfest19-microservices-demo-adservice:v2
         ports:
         - containerPort: 9555
         env:
         - name: PORT
           value: "9555"
+        - name: ENABLE_TRACING
+          value: "1"
+        - name: COLLECTOR_SERVICE_ADDR
+          value: "otel-collector:4317"
+        - name: OTEL_SERVICE_NAME
+          value: "microservices-demo-ad"
         resources:
           requests:
             cpu: 200m
