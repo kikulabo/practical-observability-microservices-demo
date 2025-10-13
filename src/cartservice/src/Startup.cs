@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Hosting;
@@ -12,6 +13,7 @@ using cartservice.services;
 using Microsoft.Extensions.Caching.StackExchangeRedis;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
+using StackExchange.Redis;
 
 namespace cartservice
 {
@@ -32,12 +34,18 @@ namespace cartservice
             string spannerProjectId = Configuration["SPANNER_PROJECT"];
             string spannerConnectionString = Configuration["SPANNER_CONNECTION_STRING"];
             string alloyDBConnectionString = Configuration["ALLOYDB_PRIMARY_IP"];
+            IConnectionMultiplexer redisConnection = null;
 
             if (!string.IsNullOrEmpty(redisAddress))
             {
+                // Create Redis connection for instrumentation
+                var redisOptions = ConfigurationOptions.Parse(redisAddress);
+                redisConnection = ConnectionMultiplexer.Connect(redisOptions);
+                services.AddSingleton<IConnectionMultiplexer>(redisConnection);
+
                 services.AddStackExchangeRedisCache(options =>
                 {
-                    options.Configuration = redisAddress;
+                    options.ConnectionMultiplexerFactory = () => Task.FromResult(redisConnection);
                 });
                 services.AddSingleton<ICartStore, RedisCartStore>();
             }
@@ -69,7 +77,7 @@ namespace cartservice
                 services.AddOpenTelemetry()
                     .WithTracing(tracerProviderBuilder =>
                     {
-                        tracerProviderBuilder
+                        var builder = tracerProviderBuilder
                             .SetResourceBuilder(
                                 ResourceBuilder.CreateDefault()
                                     .AddService(serviceName: serviceName, serviceVersion: "1.0.0"))
@@ -81,6 +89,15 @@ namespace cartservice
                             {
                                 options.Endpoint = new Uri($"http://{collectorAddr}");
                             });
+
+                        // Add Redis instrumentation if Redis is configured
+                        if (redisConnection != null)
+                        {
+                            builder.AddRedisInstrumentation(redisConnection, options =>
+                            {
+                                options.SetVerboseDatabaseStatements = true;
+                            });
+                        }
                     });
             }
 
