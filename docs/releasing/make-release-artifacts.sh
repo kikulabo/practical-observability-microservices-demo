@@ -89,6 +89,16 @@ mk_kubernetes_manifests() {
             continue
         fi
 
+        # Skip currencyservice to preserve custom image name
+        if [[ "$svcname" == "currencyservice" ]]; then
+            continue
+        fi
+
+        # Skip paymentservice to preserve custom image name
+        if [[ "$svcname" == "paymentservice" ]]; then
+            continue
+        fi
+
         image="$REPO_PREFIX/$svcname:$TAG"
 
         pattern="^(\s*)image:\s.*$svcname(.*)(\s*)"
