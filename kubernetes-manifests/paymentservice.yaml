@@ -43,7 +43,7 @@ spec:
               - ALL
           privileged: false
           readOnlyRootFilesystem: true
-        image: paymentservice
+        image: kikulabo/techbookfest19-microservices-demo-paymentservice:v1
         ports:
         - containerPort: 50051
         env:
@@ -51,6 +51,12 @@ spec:
           value: "50051"
         - name: DISABLE_PROFILER
           value: "1"
+        - name: ENABLE_TRACING
+          value: "1"
+        - name: COLLECTOR_SERVICE_ADDR
+          value: "otel-collector:4317"
+        - name: OTEL_SERVICE_NAME
+          value: "microservices-demo-payment"
         readinessProbe:
           grpc:
             port: 50051
