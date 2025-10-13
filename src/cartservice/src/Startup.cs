@@ -10,6 +10,8 @@ using Microsoft.Extensions.Hosting;
 using cartservice.cartstore;
 using cartservice.services;
 using Microsoft.Extensions.Caching.StackExchangeRedis;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
 
 namespace cartservice
 {
@@ -55,6 +57,32 @@ namespace cartservice
                 services.AddSingleton<ICartStore, RedisCartStore>();
             }
 
+            // OpenTelemetry configuration
+            string enableTracing = Configuration["ENABLE_TRACING"];
+            if (!string.IsNullOrEmpty(enableTracing) && enableTracing == "1")
+            {
+                string serviceName = Configuration["OTEL_SERVICE_NAME"] ?? "cartservice";
+                string collectorAddr = Configuration["COLLECTOR_SERVICE_ADDR"] ?? "otel-collector:4317";
+
+                Console.WriteLine($"OpenTelemetry Tracing enabled. Service name: {serviceName}, Collector: {collectorAddr}");
+
+                services.AddOpenTelemetry()
+                    .WithTracing(tracerProviderBuilder =>
+                    {
+                        tracerProviderBuilder
+                            .SetResourceBuilder(
+                                ResourceBuilder.CreateDefault()
+                                    .AddService(serviceName: serviceName, serviceVersion: "1.0.0"))
+                            .AddAspNetCoreInstrumentation()
+                            .AddGrpcClientInstrumentation()
+                            .AddHttpClientInstrumentation()
+                            .AddSource(serviceName)
+                            .AddOtlpExporter(options =>
+                            {
+                                options.Endpoint = new Uri($"http://{collectorAddr}");
+                            });
+                    });
+            }
 
             services.AddGrpc();
         }

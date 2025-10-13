@@ -43,12 +43,18 @@ spec:
               - ALL
           privileged: false
           readOnlyRootFilesystem: true
-        image: cartservice
+        image: kikulabo/techbookfest19-microservices-demo-cartservice:v1
         ports:
         - containerPort: 7070
         env:
         - name: REDIS_ADDR
           value: "redis-cart:6379"
+        - name: ENABLE_TRACING
+          value: "1"
+        - name: COLLECTOR_SERVICE_ADDR
+          value: "otel-collector:4317"
+        - name: OTEL_SERVICE_NAME
+          value: "microservices-demo-cart"
         resources:
           requests:
             cpu: 200m
