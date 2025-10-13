@@ -272,12 +272,9 @@ public final class AdService {
   /** Main launches the server from the command line. */
   public static void main(String[] args) throws IOException, InterruptedException {
 
-    new Thread(
-            () -> {
-              initStats();
-              initTracing();
-            })
-        .start();
+    // Initialize stats and tracing before starting the server
+    initStats();
+    initTracing();
 
     // Start the RPC server. You shouldn't see any output from gRPC before this.
     logger.info("AdService starting.");
