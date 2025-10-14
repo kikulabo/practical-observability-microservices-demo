@@ -99,6 +99,8 @@ spec:
               fieldPath: metadata.name
         - name: MACKEREL_KUBERNETES_KUBELET_READ_ONLY_PORT
           value: "0"
+        - name: MACKEREL_KUBERNETES_KUBELET_INSECURE_TLS
+          value: "true"
         - name: MACKEREL_ROLES
           value: "microservices-demo:cart"
 ---
