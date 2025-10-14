@@ -33,7 +33,7 @@ spec:
       labels:
         app: adservice
     spec:
-      serviceAccountName: adservice
+      serviceAccountName: mackerel-container-agent
       terminationGracePeriodSeconds: 5
       securityContext:
         fsGroup: 1000
@@ -78,6 +78,38 @@ spec:
           periodSeconds: 15
           grpc:
             port: 9555
+      - name: mackerel-container-agent
+        image: mackerel/mackerel-container-agent:latest
+        imagePullPolicy: Always
+        resources:
+          limits:
+            memory: 128Mi
+        env:
+        - name: MACKEREL_CONTAINER_PLATFORM
+          value: kubernetes
+        - name: MACKEREL_APIKEY
+          valueFrom:
+            secretKeyRef:
+              name: mackerel-apikey
+              key: apikey
+        - name: MACKEREL_KUBERNETES_KUBELET_HOST
+          valueFrom:
+            fieldRef:
+              fieldPath: status.hostIP
+        - name: MACKEREL_KUBERNETES_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: MACKEREL_KUBERNETES_POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: MACKEREL_KUBERNETES_KUBELET_READ_ONLY_PORT
+          value: "0"
+        - name: MACKEREL_KUBERNETES_KUBELET_INSECURE_TLS
+          value: "true"
+        - name: MACKEREL_ROLES
+          value: "microservices-demo:ad"
 ---
 apiVersion: v1
 kind: Service
@@ -114,7 +146,7 @@ spec:
       labels:
         app: shippingservice
     spec:
-      serviceAccountName: shippingservice
+      serviceAccountName: mackerel-container-agent
       securityContext:
         fsGroup: 1000
         runAsGroup: 1000
@@ -157,6 +189,38 @@ spec:
           limits:
             cpu: 200m
             memory: 128Mi
+      - name: mackerel-container-agent
+        image: mackerel/mackerel-container-agent:latest
+        imagePullPolicy: Always
+        resources:
+          limits:
+            memory: 128Mi
+        env:
+        - name: MACKEREL_CONTAINER_PLATFORM
+          value: kubernetes
+        - name: MACKEREL_APIKEY
+          valueFrom:
+            secretKeyRef:
+              name: mackerel-apikey
+              key: apikey
+        - name: MACKEREL_KUBERNETES_KUBELET_HOST
+          valueFrom:
+            fieldRef:
+              fieldPath: status.hostIP
+        - name: MACKEREL_KUBERNETES_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: MACKEREL_KUBERNETES_POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: MACKEREL_KUBERNETES_KUBELET_READ_ONLY_PORT
+          value: "0"
+        - name: MACKEREL_KUBERNETES_KUBELET_INSECURE_TLS
+          value: "true"
+        - name: MACKEREL_ROLES
+          value: "microservices-demo:shipping" 
 ---
 apiVersion: v1
 kind: Service
@@ -195,7 +259,7 @@ spec:
       annotations:
         sidecar.istio.io/rewriteAppHTTPProbers: "true"
     spec:
-      serviceAccountName: frontend
+      serviceAccountName: mackerel-container-agent
       securityContext:
         fsGroup: 1000
         runAsGroup: 1000
@@ -276,6 +340,38 @@ spec:
             limits:
               cpu: 200m
               memory: 128Mi
+        - name: mackerel-container-agent
+          image: mackerel/mackerel-container-agent:latest
+          imagePullPolicy: Always
+          resources:
+            limits:
+              memory: 128Mi
+          env:
+          - name: MACKEREL_CONTAINER_PLATFORM
+            value: kubernetes
+          - name: MACKEREL_APIKEY
+            valueFrom:
+              secretKeyRef:
+                name: mackerel-apikey
+                key: apikey
+          - name: MACKEREL_KUBERNETES_KUBELET_HOST
+            valueFrom:
+              fieldRef:
+                fieldPath: status.hostIP
+          - name: MACKEREL_KUBERNETES_NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+          - name: MACKEREL_KUBERNETES_POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          - name: MACKEREL_KUBERNETES_KUBELET_READ_ONLY_PORT
+            value: "0"
+          - name: MACKEREL_KUBERNETES_KUBELET_INSECURE_TLS
+            value: "true"
+          - name: MACKEREL_ROLES
+            value: "microservices-demo:frontend"
 ---
 apiVersion: v1
 kind: Service
@@ -313,6 +409,39 @@ kind: ServiceAccount
 metadata:
   name: frontend
 ---
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: mackerel-container-agent
+  namespace: default
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: mackerel-container-agent-clusterrole
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - nodes/proxy
+  - nodes/stats
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: mackerel-container-agent-clusterrolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: mackerel-container-agent-clusterrole
+subjects:
+- kind: ServiceAccount
+  name: mackerel-container-agent
+  namespace: default
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -328,7 +457,7 @@ spec:
       labels:
         app: productcatalogservice
     spec:
-      serviceAccountName: productcatalogservice
+      serviceAccountName: mackerel-container-agent
       terminationGracePeriodSeconds: 5
       securityContext:
         fsGroup: 1000
@@ -371,6 +500,38 @@ spec:
           limits:
             cpu: 200m
             memory: 128Mi
+      - name: mackerel-container-agent
+        image: mackerel/mackerel-container-agent:latest
+        imagePullPolicy: Always
+        resources:
+          limits:
+            memory: 128Mi
+        env:
+        - name: MACKEREL_CONTAINER_PLATFORM
+          value: kubernetes
+        - name: MACKEREL_APIKEY
+          valueFrom:
+            secretKeyRef:
+              name: mackerel-apikey
+              key: apikey
+        - name: MACKEREL_KUBERNETES_KUBELET_HOST
+          valueFrom:
+            fieldRef:
+              fieldPath: status.hostIP
+        - name: MACKEREL_KUBERNETES_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: MACKEREL_KUBERNETES_POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: MACKEREL_KUBERNETES_KUBELET_READ_ONLY_PORT
+          value: "0"
+        - name: MACKEREL_KUBERNETES_KUBELET_INSECURE_TLS
+          value: "true"
+        - name: MACKEREL_ROLES
+          value: "microservices-demo:productcatalog"
 ---
 apiVersion: v1
 kind: Service
@@ -407,7 +568,7 @@ spec:
       labels:
         app: recommendationservice
     spec:
-      serviceAccountName: recommendationservice
+      serviceAccountName: mackerel-container-agent
       terminationGracePeriodSeconds: 5
       securityContext:
         fsGroup: 1000
@@ -454,6 +615,38 @@ spec:
           limits:
             cpu: 200m
             memory: 450Mi
+      - name: mackerel-container-agent
+        image: mackerel/mackerel-container-agent:latest
+        imagePullPolicy: Always
+        resources:
+          limits:
+            memory: 128Mi
+        env:
+        - name: MACKEREL_CONTAINER_PLATFORM
+          value: kubernetes
+        - name: MACKEREL_APIKEY
+          valueFrom:
+            secretKeyRef:
+              name: mackerel-apikey
+              key: apikey
+        - name: MACKEREL_KUBERNETES_KUBELET_HOST
+          valueFrom:
+            fieldRef:
+              fieldPath: status.hostIP
+        - name: MACKEREL_KUBERNETES_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: MACKEREL_KUBERNETES_POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: MACKEREL_KUBERNETES_KUBELET_READ_ONLY_PORT
+          value: "0"
+        - name: MACKEREL_KUBERNETES_KUBELET_INSECURE_TLS
+          value: "true"
+        - name: MACKEREL_ROLES
+          value: "microservices-demo:recommendation"
 ---
 apiVersion: v1
 kind: Service
@@ -577,7 +770,7 @@ spec:
       labels:
         app: currencyservice
     spec:
-      serviceAccountName: currencyservice
+      serviceAccountName: mackerel-container-agent
       terminationGracePeriodSeconds: 5
       securityContext:
         fsGroup: 1000
@@ -621,6 +814,38 @@ spec:
           limits:
             cpu: 200m
             memory: 128Mi
+      - name: mackerel-container-agent
+        image: mackerel/mackerel-container-agent:latest
+        imagePullPolicy: Always
+        resources:
+          limits:
+            memory: 128Mi
+        env:
+        - name: MACKEREL_CONTAINER_PLATFORM
+          value: kubernetes
+        - name: MACKEREL_APIKEY
+          valueFrom:
+            secretKeyRef:
+              name: mackerel-apikey
+              key: apikey
+        - name: MACKEREL_KUBERNETES_KUBELET_HOST
+          valueFrom:
+            fieldRef:
+              fieldPath: status.hostIP
+        - name: MACKEREL_KUBERNETES_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: MACKEREL_KUBERNETES_POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: MACKEREL_KUBERNETES_KUBELET_READ_ONLY_PORT
+          value: "0"
+        - name: MACKEREL_KUBERNETES_KUBELET_INSECURE_TLS
+          value: "true"
+        - name: MACKEREL_ROLES
+          value: "microservices-demo:currency" 
 ---
 apiVersion: v1
 kind: Service
@@ -657,7 +882,7 @@ spec:
       labels:
         app: paymentservice
     spec:
-      serviceAccountName: paymentservice
+      serviceAccountName: mackerel-container-agent
       terminationGracePeriodSeconds: 5
       securityContext:
         fsGroup: 1000
@@ -700,6 +925,38 @@ spec:
           limits:
             cpu: 200m
             memory: 128Mi
+      - name: mackerel-container-agent
+        image: mackerel/mackerel-container-agent:latest
+        imagePullPolicy: Always
+        resources:
+          limits:
+            memory: 128Mi
+        env:
+        - name: MACKEREL_CONTAINER_PLATFORM
+          value: kubernetes
+        - name: MACKEREL_APIKEY
+          valueFrom:
+            secretKeyRef:
+              name: mackerel-apikey
+              key: apikey
+        - name: MACKEREL_KUBERNETES_KUBELET_HOST
+          valueFrom:
+            fieldRef:
+              fieldPath: status.hostIP
+        - name: MACKEREL_KUBERNETES_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: MACKEREL_KUBERNETES_POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: MACKEREL_KUBERNETES_KUBELET_READ_ONLY_PORT
+          value: "0"
+        - name: MACKEREL_KUBERNETES_KUBELET_INSECURE_TLS
+          value: "true"
+        - name: MACKEREL_ROLES
+          value: "microservices-demo:payment" 
 ---
 apiVersion: v1
 kind: Service
@@ -736,7 +993,7 @@ spec:
       labels:
         app: emailservice
     spec:
-      serviceAccountName: emailservice
+      serviceAccountName: mackerel-container-agent
       terminationGracePeriodSeconds: 5
       securityContext:
         fsGroup: 1000
@@ -781,6 +1038,38 @@ spec:
           limits:
             cpu: 200m
             memory: 128Mi
+      - name: mackerel-container-agent
+        image: mackerel/mackerel-container-agent:latest
+        imagePullPolicy: Always
+        resources:
+          limits:
+            memory: 128Mi
+        env:
+        - name: MACKEREL_CONTAINER_PLATFORM
+          value: kubernetes
+        - name: MACKEREL_APIKEY
+          valueFrom:
+            secretKeyRef:
+              name: mackerel-apikey
+              key: apikey
+        - name: MACKEREL_KUBERNETES_KUBELET_HOST
+          valueFrom:
+            fieldRef:
+              fieldPath: status.hostIP
+        - name: MACKEREL_KUBERNETES_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: MACKEREL_KUBERNETES_POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: MACKEREL_KUBERNETES_KUBELET_READ_ONLY_PORT
+          value: "0"
+        - name: MACKEREL_KUBERNETES_KUBELET_INSECURE_TLS
+          value: "true"
+        - name: MACKEREL_ROLES
+          value: "microservices-demo:email" 
 ---
 apiVersion: v1
 kind: Service
@@ -817,7 +1106,7 @@ spec:
       labels:
         app: cartservice
     spec:
-      serviceAccountName: cartservice
+      serviceAccountName: mackerel-container-agent
       terminationGracePeriodSeconds: 5
       securityContext:
         fsGroup: 1000
@@ -861,6 +1150,38 @@ spec:
           periodSeconds: 10
           grpc:
             port: 7070
+      - name: mackerel-container-agent
+        image: mackerel/mackerel-container-agent:latest
+        imagePullPolicy: Always
+        resources:
+          limits:
+            memory: 128Mi
+        env:
+        - name: MACKEREL_CONTAINER_PLATFORM
+          value: kubernetes
+        - name: MACKEREL_APIKEY
+          valueFrom:
+            secretKeyRef:
+              name: mackerel-apikey
+              key: apikey
+        - name: MACKEREL_KUBERNETES_KUBELET_HOST
+          valueFrom:
+            fieldRef:
+              fieldPath: status.hostIP
+        - name: MACKEREL_KUBERNETES_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: MACKEREL_KUBERNETES_POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: MACKEREL_KUBERNETES_KUBELET_READ_ONLY_PORT
+          value: "0"
+        - name: MACKEREL_KUBERNETES_KUBELET_INSECURE_TLS
+          value: "true"
+        - name: MACKEREL_ROLES
+          value: "microservices-demo:cart"
 ---
 apiVersion: v1
 kind: Service
@@ -1074,7 +1395,7 @@ spec:
       labels:
         app: checkoutservice
     spec:
-      serviceAccountName: checkoutservice
+      serviceAccountName: mackerel-container-agent
       securityContext:
         fsGroup: 1000
         runAsGroup: 1000
@@ -1126,6 +1447,38 @@ spec:
             limits:
               cpu: 200m
               memory: 128Mi
+        - name: mackerel-container-agent
+          image: mackerel/mackerel-container-agent:latest
+          imagePullPolicy: Always
+          resources:
+            limits:
+              memory: 128Mi
+          env:
+          - name: MACKEREL_CONTAINER_PLATFORM
+            value: kubernetes
+          - name: MACKEREL_APIKEY
+            valueFrom:
+              secretKeyRef:
+                name: mackerel-apikey
+                key: apikey
+          - name: MACKEREL_KUBERNETES_KUBELET_HOST
+            valueFrom:
+              fieldRef:
+                fieldPath: status.hostIP
+          - name: MACKEREL_KUBERNETES_NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+          - name: MACKEREL_KUBERNETES_POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          - name: MACKEREL_KUBERNETES_KUBELET_READ_ONLY_PORT
+            value: "0"
+          - name: MACKEREL_KUBERNETES_KUBELET_INSECURE_TLS
+            value: "true"
+          - name: MACKEREL_ROLES
+            value: "microservices-demo:checkout"
 ---
 apiVersion: v1
 kind: Service
