@@ -27,7 +27,7 @@ spec:
       labels:
         app: recommendationservice
     spec:
-      serviceAccountName: recommendationservice
+      serviceAccountName: mackerel-container-agent
       terminationGracePeriodSeconds: 5
       securityContext:
         fsGroup: 1000
@@ -74,6 +74,38 @@ spec:
           limits:
             cpu: 200m
             memory: 450Mi
+      - name: mackerel-container-agent
+        image: mackerel/mackerel-container-agent:latest
+        imagePullPolicy: Always
+        resources:
+          limits:
+            memory: 128Mi
+        env:
+        - name: MACKEREL_CONTAINER_PLATFORM
+          value: kubernetes
+        - name: MACKEREL_APIKEY
+          valueFrom:
+            secretKeyRef:
+              name: mackerel-apikey
+              key: apikey
+        - name: MACKEREL_KUBERNETES_KUBELET_HOST
+          valueFrom:
+            fieldRef:
+              fieldPath: status.hostIP
+        - name: MACKEREL_KUBERNETES_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: MACKEREL_KUBERNETES_POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: MACKEREL_KUBERNETES_KUBELET_READ_ONLY_PORT
+          value: "0"
+        - name: MACKEREL_KUBERNETES_KUBELET_INSECURE_TLS
+          value: "true"
+        - name: MACKEREL_ROLES
+          value: "microservices-demo:recommendation"
 ---
 apiVersion: v1
 kind: Service
