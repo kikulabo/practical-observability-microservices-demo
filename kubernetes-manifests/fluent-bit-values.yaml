@@ -89,6 +89,14 @@ config:
         Buffer_Size 256KB
 
     [FILTER]
+        Name modify
+        Match kube.*
+        Add service.name ${kubernetes['labels']['app']}
+        Add service.namespace ${kubernetes['namespace_name']}
+        Add service.pod ${kubernetes['pod_name']}
+        Add service.container ${kubernetes['container_name']}
+
+    [FILTER]
         Name nest
         Match kube.*
         Operation lift
