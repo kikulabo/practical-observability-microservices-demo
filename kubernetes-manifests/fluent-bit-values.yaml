@@ -45,7 +45,7 @@ config:
   service: |
     [SERVICE]
         Daemon Off
-        Flush 5
+        Flush 15
         Log_Level info
         Parsers_File /fluent-bit/etc/parsers.conf
         Parsers_File /fluent-bit/etc/conf/custom_parsers.conf
@@ -53,6 +53,11 @@ config:
         HTTP_Listen 0.0.0.0
         HTTP_Port 2020
         Health_Check On
+        storage.path /var/fluent-bit/state/flb-storage/
+        storage.sync normal
+        storage.checksum off
+        storage.max_chunks_up 128
+        storage.backlog.mem_limit 5M
 
   inputs: |
     [INPUT]
@@ -63,6 +68,9 @@ config:
         Mem_Buf_Limit 5MB
         Skip_Long_Lines On
         Refresh_Interval 10
+        storage.type filesystem
+        DB /var/fluent-bit/state/flb_kube.db
+        DB.locking true
 
   filters: |
     [FILTER]
@@ -97,8 +105,10 @@ config:
         Tls.verify On
         Logs_URI /v1/logs
         Header Authorization Bearer ${SAKURA_LOGS_API_KEY}
-        Log_response_payload True
+        Log_response_payload False
         Retry_Limit False
+        workers 1
+        storage.total_limit_size 10M
 
   customParsers: |
     [PARSER]
@@ -127,6 +137,8 @@ daemonSetVolumes:
     hostPath:
       path: /etc/machine-id
       type: File
+  - name: fluentbit-state
+    emptyDir: {}
 
 daemonSetVolumeMounts:
   - name: varlog
@@ -138,6 +150,8 @@ daemonSetVolumeMounts:
   - name: etcmachineid
     mountPath: /etc/machine-id
     readOnly: true
+  - name: fluentbit-state
+    mountPath: /var/fluent-bit/state
 
 logLevel: info
 
