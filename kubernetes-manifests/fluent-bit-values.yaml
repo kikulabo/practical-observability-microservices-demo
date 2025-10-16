@@ -89,19 +89,19 @@ config:
         Buffer_Size 256KB
 
     [FILTER]
-        Name modify
-        Match kube.*
-        Add service.name ${kubernetes['labels']['app']}
-        Add service.namespace ${kubernetes['namespace_name']}
-        Add service.pod ${kubernetes['pod_name']}
-        Add service.container ${kubernetes['container_name']}
-
-    [FILTER]
         Name nest
         Match kube.*
         Operation lift
         Nested_under kubernetes
         Add_prefix k8s_
+
+    [FILTER]
+        Name modify
+        Match kube.*
+        Rename k8s_labels.app service.name
+        Copy k8s_namespace_name service.namespace
+        Copy k8s_pod_name service.pod
+        Copy k8s_container_name service.container
 
   outputs: |
     [OUTPUT]
