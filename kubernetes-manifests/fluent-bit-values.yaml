@@ -81,27 +81,12 @@ config:
         Kube_Token_File /var/run/secrets/kubernetes.io/serviceaccount/token
         Kube_Tag_Prefix kube.var.log.containers.
         Merge_Log On
-        Keep_Log Off
+        Keep_Log On
         K8S-Logging.Parser On
         K8S-Logging.Exclude On
         Labels On
         Annotations Off
         Buffer_Size 256KB
-
-    [FILTER]
-        Name nest
-        Match kube.*
-        Operation lift
-        Nested_under kubernetes
-        Add_prefix k8s_
-
-    [FILTER]
-        Name modify
-        Match kube.*
-        Rename k8s_labels.app service.name
-        Copy k8s_namespace_name service.namespace
-        Copy k8s_pod_name service.pod
-        Copy k8s_container_name service.container
 
   outputs: |
     [OUTPUT]
@@ -117,6 +102,7 @@ config:
         Retry_Limit False
         workers 1
         storage.total_limit_size 10M
+        add_label kubernetes true
 
   customParsers: |
     [PARSER]
