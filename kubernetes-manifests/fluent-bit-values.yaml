@@ -1,15 +1,3 @@
-image:
-  repository: fluent/fluent-bit
-  tag: 3.2.2
-  pullPolicy: IfNotPresent
-
-resources:
-  limits:
-    memory: 200Mi
-  requests:
-    cpu: 100m
-    memory: 100Mi
-
 env:
   - name: SAKURA_LOGS_HOST
     valueFrom:
@@ -22,42 +10,19 @@ env:
         name: sakura-monitoring-suite
         key: logs-api-key
 
-serviceAccount:
-  create: true
-  name: fluent-bit
-
-rbac:
-  create: true
-  nodeAccess: true
-
-podSecurityPolicy:
-  create: false
-
 tolerations:
   - key: node-role.kubernetes.io/control-plane
-    operator: Exists
-    effect: NoSchedule
-  - key: node-role.kubernetes.io/master
     operator: Exists
     effect: NoSchedule
 
 config:
   service: |
     [SERVICE]
-        Daemon Off
         Flush 15
-        Log_Level info
-        Parsers_File /fluent-bit/etc/parsers.conf
-        Parsers_File /fluent-bit/etc/conf/custom_parsers.conf
         HTTP_Server On
         HTTP_Listen 0.0.0.0
         HTTP_Port 2020
         Health_Check On
-        storage.path /var/fluent-bit/state/flb-storage/
-        storage.sync normal
-        storage.checksum off
-        storage.max_chunks_up 128
-        storage.backlog.mem_limit 5M
 
   inputs: |
     [INPUT]
@@ -65,25 +30,13 @@ config:
         Path /var/log/containers/*.log
         multiline.parser docker, cri
         Tag kube.*
-        Mem_Buf_Limit 5MB
-        Skip_Long_Lines On
-        Refresh_Interval 10
-        storage.type filesystem
-        DB /var/fluent-bit/state/flb_kube.db
-        DB.locking true
 
   filters: |
     [FILTER]
         Name kubernetes
         Match kube.*
-        Kube_URL https://kubernetes.default.svc:443
-        Kube_CA_File /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
-        Kube_Token_File /var/run/secrets/kubernetes.io/serviceaccount/token
-        Kube_Tag_Prefix kube.var.log.containers.
         Merge_Log On
         Keep_Log On
-        K8S-Logging.Parser On
-        K8S-Logging.Exclude On
         Labels On
         Annotations Off
         Buffer_Size 256KB
@@ -95,30 +48,9 @@ config:
         Host ${SAKURA_LOGS_HOST}
         Port 443
         Tls On
-        Tls.verify On
         Logs_URI /v1/logs
         Header Authorization Bearer ${SAKURA_LOGS_API_KEY}
-        Log_response_payload False
-        Retry_Limit False
         workers 1
-        storage.total_limit_size 10M
-        add_label kubernetes true
-
-  customParsers: |
-    [PARSER]
-        Name docker
-        Format json
-        Time_Key time
-        Time_Format %Y-%m-%dT%H:%M:%S.%L
-        Time_Keep On
-
-    [PARSER]
-        Name cri
-        Format regex
-        Regex ^(?<time>[^ ]+) (?<stream>stdout|stderr) (?<logtag>[^ ]*) (?<log>.*)$
-        Time_Key time
-        Time_Format %Y-%m-%dT%H:%M:%S.%L%z
-        Time_Keep On
 
 daemonSetVolumes:
   - name: varlog
@@ -127,10 +59,6 @@ daemonSetVolumes:
   - name: varlibdockercontainers
     hostPath:
       path: /var/lib/docker/containers
-  - name: etcmachineid
-    hostPath:
-      path: /etc/machine-id
-      type: File
   - name: fluentbit-state
     emptyDir: {}
 
@@ -141,45 +69,5 @@ daemonSetVolumeMounts:
   - name: varlibdockercontainers
     mountPath: /var/lib/docker/containers
     readOnly: true
-  - name: etcmachineid
-    mountPath: /etc/machine-id
-    readOnly: true
   - name: fluentbit-state
     mountPath: /var/fluent-bit/state
-
-logLevel: info
-
-metrics:
-  enabled: true
-  serviceMonitor:
-    enabled: false
-
-podAnnotations:
-  prometheus.io/scrape: "true"
-  prometheus.io/port: "2020"
-  prometheus.io/path: /api/v1/metrics/prometheus
-
-updateStrategy:
-  type: RollingUpdate
-  rollingUpdate:
-    maxUnavailable: 1
-
-livenessProbe:
-  httpGet:
-    path: /
-    port: 2020
-  initialDelaySeconds: 10
-  periodSeconds: 10
-  timeoutSeconds: 5
-  successThreshold: 1
-  failureThreshold: 3
-
-readinessProbe:
-  httpGet:
-    path: /api/v1/health
-    port: 2020
-  initialDelaySeconds: 10
-  periodSeconds: 10
-  timeoutSeconds: 5
-  successThreshold: 1
-  failureThreshold: 3
