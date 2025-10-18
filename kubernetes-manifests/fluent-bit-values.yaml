@@ -43,7 +43,7 @@ config:
         Name    lua
         Match   kube.*
         call    sampling_filter
-        code    function sampling_filter(tag, timestamp, record) math.randomseed(os.time() + os.clock() * 1000000); if math.random() <= 0.01 then return 0, timestamp, record; else return -1, timestamp, record; end; end
+        code    function sampling_filter(tag, timestamp, record) math.randomseed(os.time() + os.clock() * 1000000); if math.random() <= 0.001 then return 0, timestamp, record; else return -1, timestamp, record; end; end
 
   outputs: |
     [OUTPUT]
