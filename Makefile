@@ -54,7 +54,6 @@ export K8S_SYSCTL_CONF
 k8s-set-up:
 	@echo "--- 1. Disabling swap ---"
 	sudo swapoff -a
-	sudo sed -i '/ swap / s/^\(.*\)$/#\1/g' /etc/fstab
 
 	@echo "\n--- 2. Configuring container runtime modules ---"
 	@echo "$$K8S_MODULES_CONF" | sudo tee /etc/modules-load.d/k8s.conf > /dev/null
