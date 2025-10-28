@@ -1,0 +1,10 @@
+network:
+  version: 2
+  ethernets:
+    eth1:
+      addresses:
+        - __IP_ADDRESS__/24
+      dhcp4: false
+      dhcp6: false
+      optional: true
+
