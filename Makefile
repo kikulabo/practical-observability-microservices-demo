@@ -28,9 +28,42 @@ network-config:
 	sudo chmod 600 /etc/netplan/99-eth1.yaml
 	@echo "\n--- Configuration complete ---"
 	@echo "Run 'make apply' to activate settings."
+
 network-apply:
 	@echo "Applying network configurations..."
 	sudo netplan apply
 
-.PHONY: network-config network-apply
+k8s-set-up:
+	@echo "--- 1. Disabling swap ---"
+	sudo swapoff -a
+	sudo sed -i '/ swap / s/^\(.*\)$/#\1/g' /etc/fstab
 
+	@echo "\n--- 2. Configuring container runtime modules ---"
+	@cat <<EOF | sudo tee /etc/modules-load.d/k8s.conf
+overlay
+br_netfilter
+EOF
+	sudo modprobe overlay
+	sudo modprobe br_netfilter
+
+	@echo "\n--- 3. Configuring sysctl for Kubernetes ---"
+	@cat <<EOF | sudo tee /etc/sysctl.d/k8s.conf
+net.bridge.bridge-nf-call-iptables  = 1
+net.bridge.bridge-nf-call-ip6tables = 1
+net.ipv4.ip_forward                 = 1
+EOF
+	sudo sysctl --system
+
+	@echo "\n--- 4. Installing kubeadm, kubelet, and kubectl ---"
+	sudo apt-get install -y apt-transport-https ca-certificates curl gpg
+	curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.34/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+	echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.34/deb/ /' | sudo tee /etc/apt/sources.list.d/kubernetes.list
+	sudo apt-get update
+	sudo apt-get install -y kubelet kubeadm kubectl
+	sudo apt-mark hold kubelet kubeadm kubectl
+
+	@echo "\n--- 5. Enabling kubelet service ---"
+	sudo systemctl enable --now kubelet
+	@echo "\n--- Kubernetes setup complete ---"
+
+.PHONY: network-config network-apply k8s-set-up
