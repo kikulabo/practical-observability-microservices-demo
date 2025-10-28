@@ -64,15 +64,40 @@ k8s-set-up:
 	@echo "$$K8S_SYSCTL_CONF" | sudo tee /etc/sysctl.d/k8s.conf > /dev/null
 	sudo sysctl --system
 
-	@echo "\n--- 4. Installing kubeadm, kubelet, and kubectl ---"
+	@echo "\n--- 4. Installing Containerd (Container Runtime) ---"
+	@echo "Installing prerequisites (curl, gpg...)"
+	sudo apt-get update
 	sudo apt-get install -y apt-transport-https ca-certificates curl gpg
+	@echo "Adding Docker GPG key..."
+	sudo install -m 0755 -d /etc/apt/keyrings
+	curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+	sudo chmod a+r /etc/apt/keyrings/docker.gpg
+	@echo "Removing old/malformed docker.list (if any)..."
+	sudo rm -f /etc/apt/sources.list.d/docker.list
+	@echo "Adding Docker repository..."
+	echo "deb [arch=$$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $$(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+	@echo "Installing containerd.io..."
+	sudo apt-get update
+	sudo apt-get install -y containerd.io
+	@echo "Configuring containerd for Kubernetes (SystemdCgroup)..."
+	sudo mkdir -p /etc/containerd
+	sudo containerd config default | sudo tee /etc/containerd/config.toml > /dev/null
+	sudo sed -i 's/SystemdCgroup = false/SystemdCgroup = true/g' /etc/containerd/config.toml
+	@echo "Restarting and enabling containerd service..."
+	sudo systemctl restart containerd
+	sudo systemctl enable containerd
+
+	@echo "\n--- 5. Installing kubeadm, kubelet, and kubectl ---"
+	@echo "Adding Kubernetes GPG key..."
 	curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.34/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+	@echo "Adding Kubernetes repository..."
 	echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.34/deb/ /' | sudo tee /etc/apt/sources.list.d/kubernetes.list
+	@echo "Installing Kubernetes packages (kubelet, kubeadm, kubectl)..."
 	sudo apt-get update
 	sudo apt-get install -y kubelet kubeadm kubectl
 	sudo apt-mark hold kubelet kubeadm kubectl
 
-	@echo "\n--- 5. Enabling kubelet service ---"
+	@echo "\n--- 6. Enabling kubelet service ---"
 	sudo systemctl enable --now kubelet
 	@echo "\n--- Kubernetes setup complete ---"
 
