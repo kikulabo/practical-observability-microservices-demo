@@ -33,25 +33,36 @@ network-apply:
 	@echo "Applying network configurations..."
 	sudo netplan apply
 
+# --- k8s setup ---
+
+# define を使ってヒアドキュメントの内容を変数に格納
+define K8S_MODULES_CONF
+overlay
+br_netfilter
+endef
+
+define K8S_SYSCTL_CONF
+net.bridge.bridge-nf-call-iptables  = 1
+net.bridge.bridge-nf-call-ip6tables = 1
+net.ipv4.ip_forward                 = 1
+endef
+
+# export してシェルから参照できるようにする
+export K8S_MODULES_CONF
+export K8S_SYSCTL_CONF
+
 k8s-set-up:
 	@echo "--- 1. Disabling swap ---"
 	sudo swapoff -a
 	sudo sed -i '/ swap / s/^\(.*\)$/#\1/g' /etc/fstab
 
 	@echo "\n--- 2. Configuring container runtime modules ---"
-	@cat <<EOF | sudo tee /etc/modules-load.d/k8s.conf
-overlay
-br_netfilter
-EOF
+	@echo "$$K8S_MODULES_CONF" | sudo tee /etc/modules-load.d/k8s.conf > /dev/null
 	sudo modprobe overlay
 	sudo modprobe br_netfilter
 
 	@echo "\n--- 3. Configuring sysctl for Kubernetes ---"
-	@cat <<EOF | sudo tee /etc/sysctl.d/k8s.conf
-net.bridge.bridge-nf-call-iptables  = 1
-net.bridge.bridge-nf-call-ip6tables = 1
-net.ipv4.ip_forward                 = 1
-EOF
+	@echo "$$K8S_SYSCTL_CONF" | sudo tee /etc/sysctl.d/k8s.conf > /dev/null
 	sudo sysctl --system
 
 	@echo "\n--- 4. Installing kubeadm, kubelet, and kubectl ---"
