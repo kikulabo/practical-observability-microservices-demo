@@ -2,7 +2,7 @@ network-config:
 	@echo "--- 1. Configuring eth0 (in 01-netcfg.yaml) ---"
 	sudo chmod 600 /etc/netplan/01-netcfg.yaml
 	sudo netplan set ethernets.eth0.gateway4=NULL
-	sudo netplan set ethernets.eth0.routes='[{"to":"default", "via": "133.125.238.1"}]'
+	sudo netplan set ethernets.eth0.routes='[{"to":"default", "via": "$(shell ip -4 route show default | cut -d ' ' -f 3)"}]'
 
 	@echo "\n--- 2. Configuring eth1 (from template) ---"
 	@if [ ! -f 99-eth1.yaml.template ]; then \
@@ -27,7 +27,7 @@ network-config:
 
 	sudo chmod 600 /etc/netplan/99-eth1.yaml
 	@echo "\n--- Configuration complete ---"
-	@echo "Run 'make apply' to activate settings."
+	@echo "Run 'make network-apply' to activate settings."
 
 network-apply:
 	@echo "Applying network configurations..."
