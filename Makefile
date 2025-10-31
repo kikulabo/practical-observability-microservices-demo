@@ -33,7 +33,7 @@ network-config:
 
 	sudo chmod 600 /etc/netplan/99-eth1.yaml
 	@echo "\n--- Configuration complete ---"
-	@echo "Run 'make apply' to activate settings."
+	@echo "Run 'make network-apply' to activate settings."
 
 network-apply:
 	@echo "Applying network configurations..."
