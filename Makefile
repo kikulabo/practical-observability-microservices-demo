@@ -2,7 +2,13 @@ network-config:
 	@echo "--- 1. Configuring eth0 (in 01-netcfg.yaml) ---"
 	sudo chmod 600 /etc/netplan/01-netcfg.yaml
 	sudo netplan set ethernets.eth0.gateway4=NULL
-	sudo netplan set ethernets.eth0.routes='[{"to":"default", "via": "133.125.238.1"}]'
+	@GATEWAY=$$(ip -4 route show default | awk '{print $$3}'); \
+	if [ -z "$$GATEWAY" ]; then \
+		echo "ERROR: Could not determine default gateway."; \
+		exit 1; \
+	fi; \
+	echo "Using default gateway: $$GATEWAY"; \
+	sudo netplan set ethernets.eth0.routes='[{"to":"default", "via": "$$GATEWAY"}]'
 
 	@echo "\n--- 2. Configuring eth1 (from template) ---"
 	@if [ ! -f 99-eth1.yaml.template ]; then \
