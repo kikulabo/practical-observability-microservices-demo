@@ -25,6 +25,14 @@ data:
           Mackerel-Api-Key: ${MACKEREL_API_KEY}
           Accept: "*/*"
         compression: gzip
+      otlphttp/sakura:
+        endpoint: https://${SAKURA_LOGS_HOST}
+        headers:
+          Authorization: Bearer ${SAKURA_LOGS_API_KEY}
+        logs_endpoint: https://${SAKURA_LOGS_HOST}/v1/logs
+        tls:
+          insecure: false
+        compression: gzip
       debug:
         verbosity: detailed
         sampling_initial: 5
@@ -39,6 +47,10 @@ data:
           receivers: [otlp]
           processors: [batch]
           exporters: [otlphttp, debug]
+        logs:
+          receivers: [otlp]
+          processors: [batch]
+          exporters: [otlphttp/sakura, debug]
 
 ---
 apiVersion: apps/v1
@@ -67,6 +79,16 @@ spec:
             secretKeyRef:
               name: mackerel-apikey
               key: apikey
+        - name: SAKURA_LOGS_HOST
+          valueFrom:
+            secretKeyRef:
+              name: sakura-monitoring-suite
+              key: logs-host
+        - name: SAKURA_LOGS_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: sakura-monitoring-suite
+              key: logs-api-key
         ports:
         - containerPort: 4317  # OTLP gRPC
           name: otlp-grpc
