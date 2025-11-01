@@ -37,12 +37,10 @@ config:
 
   outputs: |
     [OUTPUT]
-        Name opentelemetry
+        Name forward
         Match *
         Host otel-collector.default.svc.cluster.local
-        Port 4318
-        Tls Off
-        Logs_URI /v1/logs
+        Port 8006
         workers 1
 
 daemonSetVolumes:

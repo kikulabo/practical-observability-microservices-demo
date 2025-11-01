@@ -12,6 +12,8 @@ data:
             endpoint: 0.0.0.0:4317
           http:
             endpoint: 0.0.0.0:4318
+      fluentforward:
+        endpoint: 0.0.0.0:8006
 
     processors:
       batch:
@@ -48,7 +50,7 @@ data:
           processors: [batch]
           exporters: [otlphttp, debug]
         logs:
-          receivers: [otlp]
+          receivers: [otlp, fluentforward]
           processors: [batch]
           exporters: [otlphttp/sakura, debug]
 
@@ -94,6 +96,8 @@ spec:
           name: otlp-grpc
         - containerPort: 4318  # OTLP HTTP
           name: otlp-http
+        - containerPort: 8006  # Fluent Forward
+          name: fluentforward
         volumeMounts:
         - name: config
           mountPath: /conf
@@ -124,6 +128,9 @@ spec:
   - name: otlp-http
     port: 4318
     targetPort: 4318
+  - name: fluentforward
+    port: 8006
+    targetPort: 8006
   selector:
     app: otel-collector
 
