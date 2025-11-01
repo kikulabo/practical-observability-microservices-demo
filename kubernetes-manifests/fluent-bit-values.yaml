@@ -1,14 +1,4 @@
-env:
-  - name: SAKURA_LOGS_HOST
-    valueFrom:
-      secretKeyRef:
-        name: sakura-monitoring-suite
-        key: logs-host
-  - name: SAKURA_LOGS_API_KEY
-    valueFrom:
-      secretKeyRef:
-        name: sakura-monitoring-suite
-        key: logs-api-key
+env: []
 
 tolerations:
   - key: node-role.kubernetes.io/control-plane
@@ -49,11 +39,10 @@ config:
     [OUTPUT]
         Name opentelemetry
         Match *
-        Host ${SAKURA_LOGS_HOST}
-        Port 443
-        Tls On
+        Host otel-collector.default.svc.cluster.local
+        Port 4318
+        Tls Off
         Logs_URI /v1/logs
-        Header Authorization Bearer ${SAKURA_LOGS_API_KEY}
         workers 1
 
 daemonSetVolumes:
