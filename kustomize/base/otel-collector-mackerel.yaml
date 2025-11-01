@@ -25,20 +25,13 @@ data:
           Mackerel-Api-Key: ${MACKEREL_API_KEY}
           Accept: "*/*"
         compression: gzip
-      debug:
-        verbosity: detailed
-        sampling_initial: 5
-        sampling_thereafter: 200
 
     service:
-      telemetry:
-        logs:
-          level: debug
       pipelines:
         traces:
           receivers: [otlp]
           processors: [batch]
-          exporters: [otlphttp, debug]
+          exporters: [otlphttp]
 
 ---
 apiVersion: apps/v1
