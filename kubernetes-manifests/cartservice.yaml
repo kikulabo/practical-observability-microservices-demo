@@ -43,7 +43,7 @@ spec:
               - ALL
           privileged: false
           readOnlyRootFilesystem: true
-        image: kikulabo/techbookfest19-microservices-demo-cartservice:v2
+        image: kikulabo/practical-observability-microservices-demo-cartservice:v1
         ports:
         - containerPort: 7070
         env:
