@@ -42,7 +42,7 @@ spec:
               - ALL
           privileged: false
           readOnlyRootFilesystem: true
-        image: kikulabo/techbookfest19-microservices-demo-shippingservice:v1
+        image: kikulabo/practical-observability-microservices-demo-shippingservice:v1
         ports:
         - containerPort: 50051
         env:
