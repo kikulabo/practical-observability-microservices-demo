@@ -69,6 +69,21 @@ spec:
           name: otlp-grpc
         - containerPort: 4318  # OTLP HTTP
           name: otlp-http
+        - containerPort: 13133 # Health Check
+          name: health-check
+        livenessProbe:
+          httpGet:
+            path: /
+            port: health-check # 13133
+          initialDelaySeconds: 15
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /
+            port: health-check # 13133
+          initialDelaySeconds: 5
+          periodSeconds: 10
+
         volumeMounts:
         - name: config
           mountPath: /conf
