@@ -43,7 +43,7 @@ spec:
               - ALL
           privileged: false
           readOnlyRootFilesystem: true
-        image: kikulabo/techbookfest19-microservices-demo-recommendationservice:v2
+        image: kikulabo/practical-observability-microservices-demo-recommendationservice:v1
         ports:
         - containerPort: 8080
         readinessProbe:

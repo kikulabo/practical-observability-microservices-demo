@@ -43,7 +43,7 @@ spec:
               - ALL
           privileged: false
           readOnlyRootFilesystem: true
-        image: kikulabo/techbookfest19-microservices-demo-emailservice:v2
+        image: kikulabo/practical-observability-microservices-demo-emailservice:v1
         ports:
         - containerPort: 8080
         env:
