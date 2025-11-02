@@ -9,9 +9,7 @@ data:
       otlp:
         protocols:
           grpc:
-            endpoint: 0.0.0.0:4317
           http:
-            endpoint: 0.0.0.0:4318
 
     processors:
       batch:
@@ -26,7 +24,11 @@ data:
           Accept: "*/*"
         compression: gzip
 
+    extensions:
+      health_check:
+
     service:
+      extensions: [health_check]
       pipelines:
         traces:
           receivers: [otlp]
