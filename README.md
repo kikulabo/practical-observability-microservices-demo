@@ -1,3 +1,11 @@
+書籍『国産サービスで実践するオブザーバビリティ入門 [第二弾]』で使用するサンプルプログラムとセットアップに必要なファイルのリポジトリです。本書で実行するコマンドは command-reference.md に一覧があります。
+
+デモアプリケーションの元のソースコードは https://github.com/GoogleCloudPlatform/microservices-demo ですが、本書では計装の都合上、フォークしたリポジトリを利用しています。
+
+以下はフォーク元のリポジトリのREADMEです。
+
+---
+
 <!-- <p align="center">
 <img src="/src/frontend/static/icons/Hipster_HeroLogoMaroon.svg" width="300" alt="Online Boutique" />
 </p> -->
